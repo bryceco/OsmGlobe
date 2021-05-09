@@ -1,6 +1,8 @@
 # OsmGlobe
 A 3-D globe covered with Web Mercator (OSM) tiles
 
+Runs on iOS (iPhone/iPad/Mac Catalyst)
+
 A work in progress:
 
 * The globe is created via SceneKit
