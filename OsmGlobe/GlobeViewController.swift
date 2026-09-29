@@ -14,9 +14,14 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
     private let minDistance: Float = 1.002
     private let maxDistance: Float = 10.0
 
+    /// When true, the camera always keeps north at the top of the screen.
+    /// When false, free rotation is allowed and the north button is shown.
+    var lockNorth = true
+
     /// Cached viewport size, updated on main thread for safe access from the render thread.
     private var cachedViewportSize: CGSize = .zero
 
+    private var northButton: UIButton!
     private var activityIndicator: UIActivityIndicatorView!
     private var downloadCountLabel: UILabel!
 
@@ -76,13 +81,14 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
             loadingStack.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
         ])
 
-        let northButton = UIButton(type: .system)
+        northButton = UIButton(type: .system)
         northButton.setImage(UIImage(systemName: "location.north.fill"), for: .normal)
         northButton.tintColor = .white
         northButton.backgroundColor = UIColor(white: 0.2, alpha: 0.8)
         northButton.layer.cornerRadius = 20
         northButton.translatesAutoresizingMaskIntoConstraints = false
         northButton.addTarget(self, action: #selector(orientNorth), for: .touchUpInside)
+        northButton.isHidden = lockNorth
         view.addSubview(northButton)
         NSLayoutConstraint.activate([
             northButton.widthAnchor.constraint(equalToConstant: 40),
@@ -118,6 +124,10 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
 
         cameraOrientation = simd_normalize(rotV * rotH * cameraOrientation)
 
+        if lockNorth {
+            enforceNorthUp()
+        }
+
         gesture.setTranslation(.zero, in: scnView)
         updateCameraTransform()
     }
@@ -143,28 +153,27 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
         updateCameraTransform()
     }
 
-    @objc private func orientNorth() {
-        // Keep the same viewing direction but remove any accumulated roll
-        // so that the meridian facing the user becomes vertical.
+    /// Snaps `cameraOrientation` so that north is at the top of the screen,
+    /// keeping the same viewing direction.
+    private func enforceNorthUp() {
         let forward = simd_normalize(cameraOrientation.act(SIMD3<Float>(0, 0, 1)))
         let worldUp = SIMD3<Float>(0, 1, 0)
 
-        // Project world-up onto the plane perpendicular to the viewing direction.
         let northUp = worldUp - simd_dot(worldUp, forward) * forward
         let northUpLen = simd_length(northUp)
 
-        // If looking straight at a pole, north-up is undefined; do nothing.
+        // If looking straight at a pole, north-up is undefined; leave as-is.
         guard northUpLen > 0.001 else { return }
 
         let up = northUp / northUpLen
         let right = simd_cross(up, forward)
+        cameraOrientation = simd_normalize(simd_quatf(simd_float3x3(columns: (right, up, forward))))
+    }
 
-        // Build the target quaternion from the orthonormal basis (right, up, forward).
-        let targetOrientation = simd_normalize(simd_quatf(simd_float3x3(columns: (right, up, forward))))
-
+    @objc private func orientNorth() {
         SCNTransaction.begin()
         SCNTransaction.animationDuration = 0.3
-        cameraOrientation = targetOrientation
+        enforceNorthUp()
         updateCameraTransform()
         SCNTransaction.commit()
     }
