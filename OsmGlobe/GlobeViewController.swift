@@ -124,8 +124,10 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
 
     @objc private func handlePinch(_ gesture: UIPinchGestureRecognizer) {
         if gesture.state == .changed {
-            cameraDistance /= Float(gesture.scale)
-            cameraDistance = max(minDistance, min(maxDistance, cameraDistance))
+            // Zoom the surface distance so the rate feels consistent at all altitudes.
+            var surfaceDist = cameraDistance - 1.0
+            surfaceDist /= Float(gesture.scale)
+            cameraDistance = max(minDistance, min(maxDistance, 1.0 + surfaceDist))
             gesture.scale = 1.0
             updateCameraTransform()
         }
@@ -134,8 +136,9 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
     @objc private func handleScroll(_ gesture: UIPanGestureRecognizer) {
         let translation = gesture.translation(in: scnView)
         let zoomSensitivity: Float = 0.01
-        cameraDistance *= 1.0 - Float(translation.y) * zoomSensitivity
-        cameraDistance = max(minDistance, min(maxDistance, cameraDistance))
+        var surfaceDist = cameraDistance - 1.0
+        surfaceDist *= 1.0 - Float(translation.y) * zoomSensitivity
+        cameraDistance = max(minDistance, min(maxDistance, 1.0 + surfaceDist))
         gesture.setTranslation(.zero, in: scnView)
         updateCameraTransform()
     }

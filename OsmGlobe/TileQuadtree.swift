@@ -66,6 +66,8 @@ class TileQuadtree {
             )
         }
 
+        assert(desiredTiles.count <= 200, "Tile calculation produced \(desiredTiles.count) tiles — this is excessive and risks OSM rate limits")
+
         // Skip reconciliation if nothing changed
         guard desiredTiles != previousDesiredTiles || needsReconciliation else { return }
         previousDesiredTiles = desiredTiles
@@ -153,13 +155,16 @@ class TileQuadtree {
             }
         }
 
-        // Screen-size estimation
+        // Screen-size estimation (returns -1 for off-screen tiles)
         let screenSize = estimateScreenSize(
             tile: tile,
             cameraPosition: cameraPosition,
             viewProjection: viewProjection,
             viewport: viewport
         )
+
+        // Entirely off-screen — skip this subtree
+        if screenSize < 0 { return }
 
         // Subdivide if the tile is too large on screen and we haven't hit max zoom
         if screenSize > subdivisionThreshold && tile.zoom < maxZoom {
@@ -191,14 +196,34 @@ class TileQuadtree {
             GlobeMath.geographicToCartesian(lat: bounds.minLat, lon: bounds.maxLon),
         ]
 
-        // If any corner is behind the camera the tile straddles the horizon;
-        // don't subdivide it further — the visible sliver doesn't need higher zoom.
+        // Project corners. Track whether any corner is behind the camera and
+        // collect valid screen-space points for frustum + area checks.
         var screenPoints: [CGPoint] = []
+        var anyBehind = false
         for corner in corners {
-            guard let pt = GlobeMath.projectToScreen(corner, viewProjection: viewProjection, viewport: viewport) else {
-                return 0
+            if let pt = GlobeMath.projectToScreen(corner, viewProjection: viewProjection, viewport: viewport) {
+                screenPoints.append(pt)
+            } else {
+                anyBehind = true
             }
-            screenPoints.append(pt)
+        }
+
+        // Frustum culling: if every successfully-projected corner is outside the
+        // same viewport edge, the tile is entirely off-screen.
+        let margin = max(viewport.width, viewport.height) * 0.25
+        if !screenPoints.isEmpty {
+            if screenPoints.allSatisfy({ $0.x < -margin }) ||
+               screenPoints.allSatisfy({ $0.x > viewport.width + margin }) ||
+               screenPoints.allSatisfy({ $0.y < -margin }) ||
+               screenPoints.allSatisfy({ $0.y > viewport.height + margin }) {
+                return -1
+            }
+        }
+
+        // If any corner is behind the camera, don't subdivide (the visible
+        // sliver doesn't benefit from higher zoom) but do keep the tile.
+        if anyBehind || screenPoints.count < 4 {
+            return 0
         }
 
         // Use the projected quadrilateral area (shoelace formula) rather than
