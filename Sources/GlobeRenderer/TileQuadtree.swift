@@ -3,7 +3,7 @@ import UIKit
 
 class TileQuadtree {
     private let rootNode: SCNNode
-    private let tileFetcher = TileFetcher()
+    private var tileFetcher: TileFetcher
     private let geometryBuilder = TileGeometryBuilder()
     private let stateLock = NSLock()
 
@@ -40,15 +40,41 @@ class TileQuadtree {
         return pendingDownloads.count
     }
 
-    init(rootNode: SCNNode) {
-        self.rootNode = rootNode
-    }
-
-    // MARK: - Per-Frame Update
-
     /// After the most recent `update()`, how many downloads were in flight.
     /// Captured inside the lock to avoid races with fast-completing tasks.
     private(set) var lastPendingCount = 0
+
+    init(rootNode: SCNNode, tileSource: TileSource) {
+        self.rootNode = rootNode
+        self.tileFetcher = TileFetcher(tileSource: tileSource)
+    }
+
+    /// Clears all state and switches to a new tile source.
+    func reset(tileSource: TileSource) {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+
+        // Cancel all pending downloads
+        for (_, task) in pendingDownloads {
+            task.cancel()
+        }
+        pendingDownloads.removeAll()
+
+        // Remove all scene nodes
+        for (_, tileNode) in activeTiles {
+            tileNode.scnNode.removeFromParentNode()
+        }
+        activeTiles.removeAll()
+        loadedTextures.removeAll()
+        previousDesiredTiles.removeAll()
+        needsReconciliation = false
+        lastPendingCount = 0
+
+        // Create new fetcher with new source
+        tileFetcher = TileFetcher(tileSource: tileSource)
+    }
+
+    // MARK: - Per-Frame Update
 
     func update(
         cameraPosition: SCNVector3,
@@ -74,7 +100,7 @@ class TileQuadtree {
             )
         }
 
-        assert(desiredTiles.count <= 200, "Tile calculation produced \(desiredTiles.count) tiles — this is excessive and risks OSM rate limits")
+        assert(desiredTiles.count <= 200, "Tile calculation produced \(desiredTiles.count) tiles — this is excessive and risks rate limits")
 
         // Skip reconciliation if nothing changed
         guard desiredTiles != previousDesiredTiles || needsReconciliation else { return }
@@ -82,8 +108,6 @@ class TileQuadtree {
         needsReconciliation = false
 
         // Step 2: Decide which tile nodes to keep and which textures to apply.
-        // Only check the memory cache — disk I/O is too slow for the render
-        // thread.  The async download path handles disk → network.
         var nodesToKeep = Set<TileCoordinate>()
         var texturesToApply: [TileCoordinate: UIImage] = [:]
 
@@ -93,16 +117,12 @@ class TileQuadtree {
                 texturesToApply[tile] = image
                 loadedTextures.insert(tile)
             } else if loadedTextures.contains(tile) && activeTiles[tile] != nil {
-                // Previously loaded and the SCNNode still holds a valid texture,
-                // even though NSCache evicted the UIImage.  Keep it.
                 nodesToKeep.insert(tile)
             } else {
-                // Show nearest ancestor as placeholder
                 if let (ancestor, image) = nearestMemoryAncestor(of: tile) {
                     nodesToKeep.insert(ancestor)
                     texturesToApply[ancestor] = image
                 }
-                // Async load (checks disk then network)
                 startDownload(for: tile)
             }
         }
@@ -110,13 +130,11 @@ class TileQuadtree {
         // Step 3: Reconcile scene nodes
         let currentSet = Set(activeTiles.keys)
 
-        // Remove nodes no longer needed
         for tile in currentSet.subtracting(nodesToKeep) {
             activeTiles[tile]?.scnNode.removeFromParentNode()
             activeTiles.removeValue(forKey: tile)
         }
 
-        // Add new nodes
         for tile in nodesToKeep.subtracting(currentSet) {
             let geometry = geometryBuilder.buildGeometry(for: tile)
             let node = TileNode(coordinate: tile, geometry: geometry)
@@ -127,7 +145,6 @@ class TileQuadtree {
             activeTiles[tile] = node
         }
 
-        // Apply texture updates to existing nodes
         for (tile, image) in texturesToApply {
             activeTiles[tile]?.setTexture(image)
         }
@@ -152,7 +169,6 @@ class TileQuadtree {
     ) {
         let center = tile.centerOnSphere
 
-        // Horizon culling (incorporates back-face culling via angular check)
         let camDist = GlobeMath.distance(SCNVector3Zero, cameraPosition)
         if camDist > 1.0 {
             let horizonAngle = acos(1.0 / camDist)
@@ -165,7 +181,6 @@ class TileQuadtree {
             }
         }
 
-        // Screen-size estimation (returns -1 for off-screen tiles)
         let screenSize = estimateScreenSize(
             tile: tile,
             cameraPosition: cameraPosition,
@@ -173,10 +188,8 @@ class TileQuadtree {
             viewport: viewport
         )
 
-        // Entirely off-screen — skip this subtree
         if screenSize < 0 { return }
 
-        // Subdivide if the tile is too large on screen and we haven't hit max zoom
         if screenSize > subdivisionThreshold && tile.zoom < maxZoom {
             for child in tile.children {
                 collectDesiredTiles(
@@ -206,8 +219,6 @@ class TileQuadtree {
             GlobeMath.geographicToCartesian(lat: bounds.minLat, lon: bounds.maxLon),
         ]
 
-        // Project corners. Track whether any corner is behind the camera and
-        // collect valid screen-space points for frustum + area checks.
         var screenPoints: [CGPoint] = []
         var anyBehind = false
         for corner in corners {
@@ -218,8 +229,6 @@ class TileQuadtree {
             }
         }
 
-        // Frustum culling: if every successfully-projected corner is outside the
-        // same viewport edge, the tile is entirely off-screen.
         let margin = max(viewport.width, viewport.height) * 0.25
         if !screenPoints.isEmpty {
             if screenPoints.allSatisfy({ $0.x < -margin }) ||
@@ -230,15 +239,10 @@ class TileQuadtree {
             }
         }
 
-        // If any corner is behind the camera, don't subdivide (the visible
-        // sliver doesn't benefit from higher zoom) but do keep the tile.
         if anyBehind || screenPoints.count < 4 {
             return 0
         }
 
-        // Use the projected quadrilateral area (shoelace formula) rather than
-        // the bounding box. The bounding box vastly over-estimates for
-        // foreshortened tiles near the limb, causing excessive subdivision.
         let p = screenPoints
         let area = abs(
             (p[0].x * p[1].y - p[1].x * p[0].y) +
@@ -252,8 +256,6 @@ class TileQuadtree {
 
     // MARK: - Placeholder Logic
 
-    /// Walk up the tile tree looking for an ancestor whose texture is in the
-    /// memory cache.  No disk I/O — safe to call on the render thread.
     private func nearestMemoryAncestor(of tile: TileCoordinate) -> (TileCoordinate, UIImage)? {
         var current = tile.parent
         while let ancestor = current {

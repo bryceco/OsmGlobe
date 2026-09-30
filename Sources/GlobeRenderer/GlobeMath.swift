@@ -10,7 +10,6 @@ enum GlobeMath {
         return SCNVector3(Float(x), Float(y), Float(z))
     }
 
-    /// Project a 3D world point to 2D screen coordinates.
     /// Projects a world-space point to screen coordinates.
     /// Returns `nil` if the point is behind the camera.
     static func projectToScreen(
@@ -44,18 +43,6 @@ enum GlobeMath {
     static func distance(_ a: SCNVector3, _ b: SCNVector3) -> Float {
         let dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z
         return sqrt(dx * dx + dy * dy + dz * dz)
-    }
-
-    /// Check if a point on the sphere is facing the camera (not on the back side).
-    /// For a unit sphere, the surface normal at a point equals the point itself.
-    static func isFacingCamera(tileCenter: SCNVector3, cameraPosition: SCNVector3) -> Bool {
-        let toCam = SCNVector3(
-            cameraPosition.x - tileCenter.x,
-            cameraPosition.y - tileCenter.y,
-            cameraPosition.z - tileCenter.z
-        )
-        let dot = tileCenter.x * toCam.x + tileCenter.y * toCam.y + tileCenter.z * toCam.z
-        return dot > 0
     }
 
     /// Multiply two SCNMatrix4.

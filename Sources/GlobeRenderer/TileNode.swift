@@ -11,7 +11,7 @@ class TileNode {
 
         material = SCNMaterial()
         material.isDoubleSided = false
-        material.lightingModel = .constant // No lighting needed for map tiles
+        material.lightingModel = .constant
         material.diffuse.contents = UIColor.darkGray
         material.diffuse.wrapS = .clamp
         material.diffuse.wrapT = .clamp

@@ -3,32 +3,33 @@ import SceneKit
 class GlobeScene {
     let scene: SCNScene
     let globeRootNode: SCNNode
-    private let quadtree: TileQuadtree
+    private var quadtree: TileQuadtree
 
-    init() {
+    init(tileSource: TileSource) {
         scene = SCNScene()
 
-        // Ambient light so tiles are uniformly lit
         let ambientLight = SCNNode()
         ambientLight.light = SCNLight()
         ambientLight.light!.type = .ambient
         ambientLight.light!.intensity = 1000
         scene.rootNode.addChildNode(ambientLight)
 
-        // Root node for all tile geometry
         globeRootNode = SCNNode()
         scene.rootNode.addChildNode(globeRootNode)
 
-        quadtree = TileQuadtree(rootNode: globeRootNode)
+        quadtree = TileQuadtree(rootNode: globeRootNode, tileSource: tileSource)
     }
 
     var pendingDownloadCount: Int { quadtree.pendingDownloadCount }
     var lastPendingCount: Int { quadtree.lastPendingCount }
 
-    /// Forward tile-loaded callback so the view controller can trigger renders.
     var onTileLoaded: (() -> Void)? {
         get { quadtree.onTileLoaded }
         set { quadtree.onTileLoaded = newValue }
+    }
+
+    func reset(tileSource: TileSource) {
+        quadtree.reset(tileSource: tileSource)
     }
 
     func update(

@@ -26,7 +26,6 @@ class TileGeometryBuilder {
         normals.reserveCapacity(vertexCount)
         texCoords.reserveCapacity(vertexCount)
 
-        // Generate vertices in a grid, top (maxLat) to bottom (minLat)
         for row in 0...subdivisions {
             let lat = bounds.maxLat - Double(row) * latStep
             let v = CGFloat(row) / CGFloat(subdivisions)
@@ -37,12 +36,11 @@ class TileGeometryBuilder {
 
                 let pos = GlobeMath.geographicToCartesian(lat: lat, lon: lon)
                 positions.append(pos)
-                normals.append(pos) // For a unit sphere, normal == position
+                normals.append(pos)
                 texCoords.append(CGPoint(x: u, y: v))
             }
         }
 
-        // Generate triangle indices (two triangles per quad cell)
         var indices = [UInt32]()
         indices.reserveCapacity(subdivisions * subdivisions * 6)
 

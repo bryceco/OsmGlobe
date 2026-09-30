@@ -4,6 +4,7 @@ xcuserdata/
 
 # Build products
 build/
+.build/
 DerivedData/
 
 # Various settings

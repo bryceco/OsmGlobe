@@ -4,9 +4,8 @@ class TileCache {
     private let memoryCache = NSCache<NSString, UIImage>()
     private let diskCacheURL: URL
 
-    init() {
-        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-        diskCacheURL = caches.appendingPathComponent("OsmTiles", isDirectory: true)
+    init(cacheDirectory: URL) {
+        diskCacheURL = cacheDirectory
         try? FileManager.default.createDirectory(at: diskCacheURL, withIntermediateDirectories: true)
 
         memoryCache.countLimit = 500
@@ -44,5 +43,9 @@ class TileCache {
     func storeToDisk(_ data: Data, for tile: TileCoordinate) {
         let path = diskPath(for: tile)
         try? data.write(to: path, options: .atomic)
+    }
+
+    func clearMemory() {
+        memoryCache.removeAllObjects()
     }
 }

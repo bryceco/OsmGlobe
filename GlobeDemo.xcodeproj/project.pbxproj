@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -12,33 +12,18 @@
 		0250062826474DBB008AEC1A /* GlobeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0250062726474DBB008AEC1A /* GlobeViewController.swift */; };
 		0250062D26474DBD008AEC1A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0250062C26474DBD008AEC1A /* Assets.xcassets */; };
 		0250063026474DBD008AEC1A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0250062E26474DBD008AEC1A /* LaunchScreen.storyboard */; };
-		02CF4533305CA154009CFAB4 /* TileGeometryBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02CF4532305CA154009CFAB4 /* TileGeometryBuilder.swift */; };
-		02CF4535305CA154009CFAB4 /* TileCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02CF4534305CA154009CFAB4 /* TileCache.swift */; };
-		02CF4537305CA156009CFAB4 /* TileFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02CF4536305CA156009CFAB4 /* TileFetcher.swift */; };
-		02CF4539305CA17C009CFAB4 /* TileNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02CF4538305CA17C009CFAB4 /* TileNode.swift */; };
-		02CF453B305CA17C009CFAB4 /* TileQuadtree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02CF453A305CA17C009CFAB4 /* TileQuadtree.swift */; };
-		02CF453D305CA18B009CFAB4 /* GlobeScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02CF453C305CA18B009CFAB4 /* GlobeScene.swift */; };
-		02CF453F305CA1CB009CFAB4 /* GlobeMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02CF453E305CA1CB009CFAB4 /* GlobeMath.swift */; };
-		02CF4541305CA1CC009CFAB4 /* TileCoordinate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02CF4540305CA1CC009CFAB4 /* TileCoordinate.swift */; };
+		027173D0306D228200DC571C /* GlobeRenderer in Frameworks */ = {isa = PBXBuildFile; productRef = 027173CF306D228200DC571C /* GlobeRenderer */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0250062026474DBB008AEC1A /* OsmGlobe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OsmGlobe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0250062026474DBB008AEC1A /* GlobeDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GlobeDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0250062326474DBB008AEC1A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		0250062526474DBB008AEC1A /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		0250062726474DBB008AEC1A /* GlobeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobeViewController.swift; sourceTree = "<group>"; };
 		0250062C26474DBD008AEC1A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0250062F26474DBD008AEC1A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		0250063126474DBD008AEC1A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		0250063726474DC5008AEC1A /* OsmGlobe.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OsmGlobe.entitlements; sourceTree = "<group>"; };
-		02CF4532305CA154009CFAB4 /* TileGeometryBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TileGeometryBuilder.swift; sourceTree = "<group>"; };
-		02CF4534305CA154009CFAB4 /* TileCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TileCache.swift; sourceTree = "<group>"; };
-		02CF4536305CA156009CFAB4 /* TileFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TileFetcher.swift; sourceTree = "<group>"; };
-		02CF4538305CA17C009CFAB4 /* TileNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TileNode.swift; sourceTree = "<group>"; };
-		02CF453A305CA17C009CFAB4 /* TileQuadtree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TileQuadtree.swift; sourceTree = "<group>"; };
-		02CF453C305CA18B009CFAB4 /* GlobeScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobeScene.swift; sourceTree = "<group>"; };
-		02CF453E305CA1CB009CFAB4 /* GlobeMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobeMath.swift; sourceTree = "<group>"; };
-		02CF4540305CA1CC009CFAB4 /* TileCoordinate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TileCoordinate.swift; sourceTree = "<group>"; };
+		0250063726474DC5008AEC1A /* GlobeDemo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GlobeDemo.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -46,6 +31,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				027173D0306D228200DC571C /* GlobeRenderer in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -55,7 +41,7 @@
 		0250061726474DBB008AEC1A = {
 			isa = PBXGroup;
 			children = (
-				0250062226474DBB008AEC1A /* OsmGlobe */,
+				0250062226474DBB008AEC1A /* GlobeDemo */,
 				0250062126474DBB008AEC1A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -63,12 +49,12 @@
 		0250062126474DBB008AEC1A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				0250062026474DBB008AEC1A /* OsmGlobe.app */,
+				0250062026474DBB008AEC1A /* GlobeDemo.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		0250062226474DBB008AEC1A /* OsmGlobe */ = {
+		0250062226474DBB008AEC1A /* GlobeDemo */ = {
 			isa = PBXGroup;
 			children = (
 				0250062326474DBB008AEC1A /* AppDelegate.swift */,
@@ -76,26 +62,18 @@
 				0250062726474DBB008AEC1A /* GlobeViewController.swift */,
 				0250063126474DBD008AEC1A /* Info.plist */,
 				0250062E26474DBD008AEC1A /* LaunchScreen.storyboard */,
-				0250063726474DC5008AEC1A /* OsmGlobe.entitlements */,
+				0250063726474DC5008AEC1A /* GlobeDemo.entitlements */,
 				0250062526474DBB008AEC1A /* SceneDelegate.swift */,
-				02CF4532305CA154009CFAB4 /* TileGeometryBuilder.swift */,
-				02CF4534305CA154009CFAB4 /* TileCache.swift */,
-				02CF4536305CA156009CFAB4 /* TileFetcher.swift */,
-				02CF4538305CA17C009CFAB4 /* TileNode.swift */,
-				02CF453A305CA17C009CFAB4 /* TileQuadtree.swift */,
-				02CF453C305CA18B009CFAB4 /* GlobeScene.swift */,
-				02CF453E305CA1CB009CFAB4 /* GlobeMath.swift */,
-				02CF4540305CA1CC009CFAB4 /* TileCoordinate.swift */,
 			);
-			path = OsmGlobe;
+			path = GlobeDemo;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		0250061F26474DBB008AEC1A /* OsmGlobe */ = {
+		0250061F26474DBB008AEC1A /* GlobeDemo */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 0250063426474DBD008AEC1A /* Build configuration list for PBXNativeTarget "OsmGlobe" */;
+			buildConfigurationList = 0250063426474DBD008AEC1A /* Build configuration list for PBXNativeTarget "GlobeDemo" */;
 			buildPhases = (
 				0250061C26474DBB008AEC1A /* Sources */,
 				0250061D26474DBB008AEC1A /* Frameworks */,
@@ -105,9 +83,9 @@
 			);
 			dependencies = (
 			);
-			name = OsmGlobe;
+			name = GlobeDemo;
 			productName = OsmGlobe;
-			productReference = 0250062026474DBB008AEC1A /* OsmGlobe.app */;
+			productReference = 0250062026474DBB008AEC1A /* GlobeDemo.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -125,7 +103,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 0250061B26474DBB008AEC1A /* Build configuration list for PBXProject "OsmGlobe" */;
+			buildConfigurationList = 0250061B26474DBB008AEC1A /* Build configuration list for PBXProject "GlobeDemo" */;
 			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -134,11 +112,14 @@
 				Base,
 			);
 			mainGroup = 0250061726474DBB008AEC1A;
+			packageReferences = (
+				027173CE306D228200DC571C /* XCLocalSwiftPackageReference "../OsmGlobe" */,
+			);
 			productRefGroup = 0250062126474DBB008AEC1A /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				0250061F26474DBB008AEC1A /* OsmGlobe */,
+				0250061F26474DBB008AEC1A /* GlobeDemo */,
 			);
 		};
 /* End PBXProject section */
@@ -160,17 +141,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				02CF4541305CA1CC009CFAB4 /* TileCoordinate.swift in Sources */,
 				0250062826474DBB008AEC1A /* GlobeViewController.swift in Sources */,
-				02CF453D305CA18B009CFAB4 /* GlobeScene.swift in Sources */,
-				02CF4533305CA154009CFAB4 /* TileGeometryBuilder.swift in Sources */,
 				0250062426474DBB008AEC1A /* AppDelegate.swift in Sources */,
 				0250062626474DBB008AEC1A /* SceneDelegate.swift in Sources */,
-				02CF4535305CA154009CFAB4 /* TileCache.swift in Sources */,
-				02CF4539305CA17C009CFAB4 /* TileNode.swift in Sources */,
-				02CF453F305CA1CB009CFAB4 /* GlobeMath.swift in Sources */,
-				02CF453B305CA17C009CFAB4 /* TileQuadtree.swift in Sources */,
-				02CF4537305CA156009CFAB4 /* TileFetcher.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -315,9 +288,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = OsmGlobe/OsmGlobe.entitlements;
+				CODE_SIGN_ENTITLEMENTS = GlobeDemo/GlobeDemo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = OsmGlobe/Info.plist;
+				INFOPLIST_FILE = GlobeDemo/Info.plist;
 				"IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]" = 14.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -336,9 +309,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = OsmGlobe/OsmGlobe.entitlements;
+				CODE_SIGN_ENTITLEMENTS = GlobeDemo/GlobeDemo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = OsmGlobe/Info.plist;
+				INFOPLIST_FILE = GlobeDemo/Info.plist;
 				"IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]" = 14.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -355,7 +328,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		0250061B26474DBB008AEC1A /* Build configuration list for PBXProject "OsmGlobe" */ = {
+		0250061B26474DBB008AEC1A /* Build configuration list for PBXProject "GlobeDemo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0250063226474DBD008AEC1A /* Debug */,
@@ -364,7 +337,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0250063426474DBD008AEC1A /* Build configuration list for PBXNativeTarget "OsmGlobe" */ = {
+		0250063426474DBD008AEC1A /* Build configuration list for PBXNativeTarget "GlobeDemo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0250063526474DBD008AEC1A /* Debug */,
@@ -374,6 +347,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		027173CE306D228200DC571C /* XCLocalSwiftPackageReference "../OsmGlobe" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../OsmGlobe;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		027173CF306D228200DC571C /* GlobeRenderer */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GlobeRenderer;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 0250061826474DBB008AEC1A /* Project object */;
 }

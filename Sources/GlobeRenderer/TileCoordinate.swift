@@ -1,11 +1,17 @@
 import SceneKit
 
-struct TileCoordinate: Hashable, CustomStringConvertible {
-    let x: Int
-    let y: Int
-    let zoom: Int
+public struct TileCoordinate: Hashable, CustomStringConvertible {
+    public let x: Int
+    public let y: Int
+    public let zoom: Int
 
-    var description: String { "\(zoom)/\(x)/\(y)" }
+    public init(x: Int, y: Int, zoom: Int) {
+        self.x = x
+        self.y = y
+        self.zoom = zoom
+    }
+
+    public var description: String { "\(zoom)/\(x)/\(y)" }
 
     /// The four children at zoom+1.
     var children: [TileCoordinate] {
