@@ -11,7 +11,7 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
     private var cameraOrientation = simd_quatf(ix: 0, iy: 0, iz: 0, r: 1)
     private var cameraDistance: Float = 3.0
 
-    private let minDistance: Float = 1.002
+    private let minDistance: Float = 1.00002
     private let maxDistance: Float = 10.0
 
     /// When true, the camera always keeps north at the top of the screen.
@@ -24,6 +24,12 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
     private var northButton: UIButton!
     private var activityIndicator: UIActivityIndicatorView!
     private var downloadCountLabel: UILabel!
+
+    // Momentum scrolling state
+    private var momentumDisplayLink: CADisplayLink?
+    private var momentumVelocity: CGPoint = .zero
+    private var momentumStart: CFTimeInterval = 0
+    private let momentumDuration: CFTimeInterval = 0.7
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -41,7 +47,7 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
 
         cameraNode = SCNNode()
         cameraNode.camera = SCNCamera()
-        cameraNode.camera?.zNear = 0.001
+        cameraNode.camera?.zNear = 0.00001
         cameraNode.camera?.zFar = 100
         globeScene.scene.rootNode.addChildNode(cameraNode)
         scnView.pointOfView = cameraNode
@@ -106,16 +112,32 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
     }
 
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
-        let translation = gesture.translation(in: scnView)
-        // Scale rotation so the surface point tracks the finger/cursor.
+        if gesture.state == .began {
+            stopMomentum()
+        }
+
+        if gesture.state == .changed {
+            let translation = gesture.translation(in: scnView)
+            applyPan(translationX: Float(translation.x), translationY: Float(translation.y))
+            gesture.setTranslation(.zero, in: scnView)
+        }
+
+        if gesture.state == .ended || gesture.state == .cancelled {
+            let velocity = gesture.velocity(in: scnView)
+            if abs(velocity.x) > 50 || abs(velocity.y) > 50 {
+                startMomentum(velocity: velocity)
+            }
+        }
+    }
+
+    private func applyPan(translationX: Float, translationY: Float) {
         let fov = Float(cameraNode.camera?.fieldOfView ?? 60) * .pi / 180
         let viewHeight = max(Float(cachedViewportSize.height), 1)
         let sensitivity = fov / viewHeight * (cameraDistance - 1.0)
 
-        let dx = Float(translation.x) * sensitivity
-        let dy = Float(translation.y) * sensitivity
+        let dx = translationX * sensitivity
+        let dy = translationY * sensitivity
 
-        // Rotate around the camera's local axes so panning feels natural at all latitudes.
         let cameraUp = simd_normalize(cameraOrientation.act(SIMD3<Float>(0, 1, 0)))
         let cameraRight = simd_normalize(cameraOrientation.act(SIMD3<Float>(1, 0, 0)))
 
@@ -127,12 +149,41 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
         if lockNorth {
             enforceNorthUp()
         }
-
-        gesture.setTranslation(.zero, in: scnView)
         updateCameraTransform()
     }
 
+    private func startMomentum(velocity: CGPoint) {
+        momentumVelocity = velocity
+        momentumStart = CACurrentMediaTime()
+        let link = CADisplayLink(target: self, selector: #selector(momentumTick))
+        link.add(to: .main, forMode: .common)
+        momentumDisplayLink = link
+    }
+
+    private func stopMomentum() {
+        momentumDisplayLink?.invalidate()
+        momentumDisplayLink = nil
+    }
+
+    @objc private func momentumTick(_ link: CADisplayLink) {
+        let elapsed = CACurrentMediaTime() - momentumStart
+        guard elapsed < momentumDuration else {
+            stopMomentum()
+            return
+        }
+
+        // Ease-out: velocity decays to zero over momentumDuration
+        let t = Float(elapsed / momentumDuration)
+        let factor = (1 - t) * (1 - t) // quadratic ease-out
+        let dt = Float(link.targetTimestamp - link.timestamp)
+
+        let tx = Float(momentumVelocity.x) * factor * dt
+        let ty = Float(momentumVelocity.y) * factor * dt
+        applyPan(translationX: tx, translationY: ty)
+    }
+
     @objc private func handlePinch(_ gesture: UIPinchGestureRecognizer) {
+        if gesture.state == .began { stopMomentum() }
         if gesture.state == .changed {
             let oldSurfaceDist = cameraDistance - 1.0
             var newSurfaceDist = oldSurfaceDist / Float(gesture.scale)
@@ -146,6 +197,7 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
     }
 
     @objc private func handleScroll(_ gesture: UIPanGestureRecognizer) {
+        stopMomentum()
         let oldSurfaceDist = cameraDistance - 1.0
         let translation = gesture.translation(in: scnView)
         let zoomSensitivity: Float = 0.01
