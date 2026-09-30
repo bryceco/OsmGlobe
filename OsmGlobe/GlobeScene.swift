@@ -23,6 +23,7 @@ class GlobeScene {
     }
 
     var pendingDownloadCount: Int { quadtree.pendingDownloadCount }
+    var lastPendingCount: Int { quadtree.lastPendingCount }
 
     /// Forward tile-loaded callback so the view controller can trigger renders.
     var onTileLoaded: (() -> Void)? {

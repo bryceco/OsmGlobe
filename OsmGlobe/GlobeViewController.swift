@@ -24,6 +24,12 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
     private var northButton: UIButton!
     private var activityIndicator: UIActivityIndicatorView!
     private var downloadCountLabel: UILabel!
+    private var infoLabel: UILabel!
+
+    // Download indicator: only show after a short delay to avoid flashing
+    // when tiles load quickly from disk cache.
+    private var downloadsPendingSince: CFTimeInterval = 0
+    private let indicatorDelay: CFTimeInterval = 0.3
 
     // Momentum scrolling state
     private var momentumDisplayLink: CADisplayLink?
@@ -90,6 +96,21 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
         NSLayoutConstraint.activate([
             loadingStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
             loadingStack.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+        ])
+
+        infoLabel = UILabel()
+        infoLabel.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+        infoLabel.textColor = .white
+        infoLabel.backgroundColor = UIColor(white: 0, alpha: 0.5)
+        infoLabel.layer.cornerRadius = 6
+        infoLabel.clipsToBounds = true
+        // Padding via content insets
+        infoLabel.layoutMargins = .zero
+        infoLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(infoLabel)
+        NSLayoutConstraint.activate([
+            infoLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            infoLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
         ])
 
         northButton = UIButton(type: .system)
@@ -313,18 +334,33 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
             viewport: viewport
         )
 
-        let pending = globeScene.pendingDownloadCount
+        // Compute camera sub-point lat/lon and effective zoom
+        let camPos = cameraWorldPosition
+        let camLen = sqrt(camPos.x * camPos.x + camPos.y * camPos.y + camPos.z * camPos.z)
+        let lat = asin(camPos.y / camLen) * 180.0 / .pi
+        let lon = atan2(camPos.z, -camPos.x) * 180.0 / .pi
+        let zoom = log2(.pi / acos(min(1.0, 1.0 / camLen)))
+
+        let pending = globeScene.lastPendingCount
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             if pending > 0 {
-                self.activityIndicator.startAnimating()
-                self.downloadCountLabel.text = "\(pending)"
-                self.downloadCountLabel.isHidden = false
+                if self.downloadsPendingSince == 0 {
+                    self.downloadsPendingSince = CACurrentMediaTime()
+                }
+                let elapsed = CACurrentMediaTime() - self.downloadsPendingSince
+                if elapsed >= self.indicatorDelay {
+                    self.activityIndicator.startAnimating()
+                    self.downloadCountLabel.text = "\(pending)"
+                    self.downloadCountLabel.isHidden = false
+                }
             } else {
+                self.downloadsPendingSince = 0
                 self.activityIndicator.stopAnimating()
                 self.downloadCountLabel.isHidden = true
                 self.stopContinuousRenderingIfIdle()
             }
+            self.infoLabel.text = String(format: "  %.4f, %.4f  Z%.1f  ", lat, lon, zoom)
         }
     }
 

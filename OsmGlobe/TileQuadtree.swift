@@ -46,6 +46,10 @@ class TileQuadtree {
 
     // MARK: - Per-Frame Update
 
+    /// After the most recent `update()`, how many downloads were in flight.
+    /// Captured inside the lock to avoid races with fast-completing tasks.
+    private(set) var lastPendingCount = 0
+
     func update(
         cameraPosition: SCNVector3,
         viewMatrix: SCNMatrix4,
@@ -133,6 +137,8 @@ class TileQuadtree {
             task.cancel()
             pendingDownloads.removeValue(forKey: tile)
         }
+
+        lastPendingCount = pendingDownloads.count
     }
 
     // MARK: - Quadtree Traversal
