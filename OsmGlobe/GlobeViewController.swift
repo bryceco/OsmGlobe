@@ -39,10 +39,15 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
         scnView.backgroundColor = .black
         scnView.allowsCameraControl = false
         scnView.delegate = self
-        scnView.isPlaying = true // Continuous rendering for tile updates
+        scnView.isPlaying = false
         view.addSubview(scnView)
 
         globeScene = GlobeScene()
+        globeScene.onTileLoaded = { [weak self] in
+            DispatchQueue.main.async {
+                self?.setNeedsRender()
+            }
+        }
         scnView.scene = globeScene.scene
 
         cameraNode = SCNNode()
@@ -104,6 +109,27 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
         ])
     }
 
+    /// Request a render pass. Safe to call from any situation — uses
+    /// continuous rendering while activity is ongoing, single-shot otherwise.
+    private func setNeedsRender() {
+        if scnView.isPlaying {
+            return // already rendering continuously
+        }
+        scnView.setNeedsDisplay()
+    }
+
+    /// Keep rendering every frame while interaction or downloads are active.
+    private func startContinuousRendering() {
+        scnView.isPlaying = true
+    }
+
+    /// Stop continuous rendering if nothing needs it.
+    private func stopContinuousRenderingIfIdle() {
+        guard momentumDisplayLink == nil,
+              globeScene.pendingDownloadCount == 0 else { return }
+        scnView.isPlaying = false
+    }
+
     private func updateCameraTransform() {
         let position = cameraOrientation.act(SIMD3<Float>(0, 0, cameraDistance))
         cameraNode.position = SCNVector3(position.x, position.y, position.z)
@@ -114,6 +140,7 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         if gesture.state == .began {
             stopMomentum()
+            startContinuousRendering()
         }
 
         if gesture.state == .changed {
@@ -126,6 +153,8 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
             let velocity = gesture.velocity(in: scnView)
             if abs(velocity.x) > 50 || abs(velocity.y) > 50 {
                 startMomentum(velocity: velocity)
+            } else {
+                stopContinuousRenderingIfIdle()
             }
         }
     }
@@ -169,6 +198,7 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
         let elapsed = CACurrentMediaTime() - momentumStart
         guard elapsed < momentumDuration else {
             stopMomentum()
+            stopContinuousRenderingIfIdle()
             return
         }
 
@@ -183,7 +213,7 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
     }
 
     @objc private func handlePinch(_ gesture: UIPinchGestureRecognizer) {
-        if gesture.state == .began { stopMomentum() }
+        if gesture.state == .began { stopMomentum(); startContinuousRendering() }
         if gesture.state == .changed {
             let oldSurfaceDist = cameraDistance - 1.0
             var newSurfaceDist = oldSurfaceDist / Float(gesture.scale)
@@ -194,10 +224,14 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
             zoomAroundPoint(gesture.location(in: scnView), oldSurfaceDist: oldSurfaceDist, newSurfaceDist: newSurfaceDist)
             updateCameraTransform()
         }
+        if gesture.state == .ended || gesture.state == .cancelled {
+            stopContinuousRenderingIfIdle()
+        }
     }
 
     @objc private func handleScroll(_ gesture: UIPanGestureRecognizer) {
         stopMomentum()
+        startContinuousRendering()
         let oldSurfaceDist = cameraDistance - 1.0
         let translation = gesture.translation(in: scnView)
         let zoomSensitivity: Float = 0.01
@@ -208,6 +242,10 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
 
         zoomAroundPoint(gesture.location(in: scnView), oldSurfaceDist: oldSurfaceDist, newSurfaceDist: newSurfaceDist)
         updateCameraTransform()
+
+        if gesture.state == .ended || gesture.state == .cancelled {
+            stopContinuousRenderingIfIdle()
+        }
     }
 
     /// Adjusts camera orientation so that the globe point under `screenPoint`
@@ -248,8 +286,12 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
     }
 
     @objc private func orientNorth() {
+        startContinuousRendering()
         SCNTransaction.begin()
         SCNTransaction.animationDuration = 0.3
+        SCNTransaction.completionBlock = { [weak self] in
+            self?.stopContinuousRenderingIfIdle()
+        }
         enforceNorthUp()
         updateCameraTransform()
         SCNTransaction.commit()
@@ -281,8 +323,14 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
             } else {
                 self.activityIndicator.stopAnimating()
                 self.downloadCountLabel.isHidden = true
+                self.stopContinuousRenderingIfIdle()
             }
         }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        startContinuousRendering()
     }
 
     override func viewDidLayoutSubviews() {

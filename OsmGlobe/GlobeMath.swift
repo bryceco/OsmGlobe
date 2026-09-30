@@ -19,7 +19,7 @@ enum GlobeMath {
         viewport: CGSize
     ) -> CGPoint? {
         let clip = multiplyMatrix(viewProjection, vector: SIMD4<Float>(point.x, point.y, point.z, 1.0))
-        guard clip.w > 0.001 else { return nil }
+        guard clip.w > 0.00001 else { return nil }
         let ndc = CGPoint(
             x: CGFloat(clip.x / clip.w),
             y: CGFloat(clip.y / clip.w)

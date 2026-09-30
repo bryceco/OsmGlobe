@@ -29,6 +29,10 @@ class TileQuadtree {
     /// invalidating the entire desired-tile set.
     private var needsReconciliation = false
 
+    /// Called on an arbitrary thread when a tile download completes, so the
+    /// host can schedule a render pass.
+    var onTileLoaded: (() -> Void)?
+
     /// Number of tiles currently being downloaded.
     var pendingDownloadCount: Int {
         stateLock.lock()
@@ -278,6 +282,10 @@ class TileQuadtree {
         activeTiles[tile]?.setTexture(image)
         pendingDownloads.removeValue(forKey: tile)
         needsReconciliation = true
+        let callback = onTileLoaded
+        stateLock.unlock()
+        callback?()
+        stateLock.lock()
     }
 
     private func clearPendingDownload(for tile: TileCoordinate) {

@@ -24,6 +24,12 @@ class GlobeScene {
 
     var pendingDownloadCount: Int { quadtree.pendingDownloadCount }
 
+    /// Forward tile-loaded callback so the view controller can trigger renders.
+    var onTileLoaded: (() -> Void)? {
+        get { quadtree.onTileLoaded }
+        set { quadtree.onTileLoaded = newValue }
+    }
+
     func update(
         cameraPosition: SCNVector3,
         viewMatrix: SCNMatrix4,
