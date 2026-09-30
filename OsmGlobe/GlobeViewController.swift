@@ -2,7 +2,7 @@ import SceneKit
 import UIKit
 import simd
 
-class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
+class GlobeViewController: UIViewController, SCNSceneRendererDelegate, UIGestureRecognizerDelegate {
     private var scnView: SCNView!
     private var globeScene: GlobeScene!
     private var cameraNode: SCNNode!
@@ -66,9 +66,11 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
         cachedViewportSize = scnView.bounds.size
 
         let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        panGesture.delegate = self
         scnView.addGestureRecognizer(panGesture)
 
         let pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
+        pinchGesture.delegate = self
         scnView.addGestureRecognizer(pinchGesture)
 
         let scrollGesture = UIPanGestureRecognizer(target: self, action: #selector(handleScroll(_:)))
@@ -372,6 +374,13 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         cachedViewportSize = scnView.bounds.size
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+        // Allow pan + pinch to work together for two-finger zoom+pan
+        let isPanPinch = (gestureRecognizer is UIPanGestureRecognizer && other is UIPinchGestureRecognizer) ||
+                         (gestureRecognizer is UIPinchGestureRecognizer && other is UIPanGestureRecognizer)
+        return isPanPinch
     }
 
     override var prefersStatusBarHidden: Bool { true }
