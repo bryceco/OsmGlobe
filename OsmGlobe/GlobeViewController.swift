@@ -134,23 +134,48 @@ class GlobeViewController: UIViewController, SCNSceneRendererDelegate {
 
     @objc private func handlePinch(_ gesture: UIPinchGestureRecognizer) {
         if gesture.state == .changed {
-            // Zoom the surface distance so the rate feels consistent at all altitudes.
-            var surfaceDist = cameraDistance - 1.0
-            surfaceDist /= Float(gesture.scale)
-            cameraDistance = max(minDistance, min(maxDistance, 1.0 + surfaceDist))
+            let oldSurfaceDist = cameraDistance - 1.0
+            var newSurfaceDist = oldSurfaceDist / Float(gesture.scale)
+            cameraDistance = max(minDistance, min(maxDistance, 1.0 + newSurfaceDist))
+            newSurfaceDist = cameraDistance - 1.0
             gesture.scale = 1.0
+
+            zoomAroundPoint(gesture.location(in: scnView), oldSurfaceDist: oldSurfaceDist, newSurfaceDist: newSurfaceDist)
             updateCameraTransform()
         }
     }
 
     @objc private func handleScroll(_ gesture: UIPanGestureRecognizer) {
+        let oldSurfaceDist = cameraDistance - 1.0
         let translation = gesture.translation(in: scnView)
         let zoomSensitivity: Float = 0.01
-        var surfaceDist = cameraDistance - 1.0
-        surfaceDist *= 1.0 - Float(translation.y) * zoomSensitivity
-        cameraDistance = max(minDistance, min(maxDistance, 1.0 + surfaceDist))
+        var newSurfaceDist = oldSurfaceDist * (1.0 - Float(translation.y) * zoomSensitivity)
+        cameraDistance = max(minDistance, min(maxDistance, 1.0 + newSurfaceDist))
+        newSurfaceDist = cameraDistance - 1.0
         gesture.setTranslation(.zero, in: scnView)
+
+        zoomAroundPoint(gesture.location(in: scnView), oldSurfaceDist: oldSurfaceDist, newSurfaceDist: newSurfaceDist)
         updateCameraTransform()
+    }
+
+    /// Adjusts camera orientation so that the globe point under `screenPoint`
+    /// stays fixed after a zoom that changed the surface distance.
+    private func zoomAroundPoint(_ screenPoint: CGPoint, oldSurfaceDist: Float, newSurfaceDist: Float) {
+        let offsetX = Float(screenPoint.x - cachedViewportSize.width / 2)
+        let offsetY = Float(screenPoint.y - cachedViewportSize.height / 2)
+        let fov = Float(cameraNode.camera?.fieldOfView ?? 60) * .pi / 180
+        let viewHeight = max(Float(cachedViewportSize.height), 1)
+        let compensation = fov / viewHeight * (oldSurfaceDist - newSurfaceDist)
+
+        let cameraUp = simd_normalize(cameraOrientation.act(SIMD3<Float>(0, 1, 0)))
+        let cameraRight = simd_normalize(cameraOrientation.act(SIMD3<Float>(1, 0, 0)))
+        let rotH = simd_quatf(angle: offsetX * compensation, axis: cameraUp)
+        let rotV = simd_quatf(angle: offsetY * compensation, axis: cameraRight)
+        cameraOrientation = simd_normalize(rotV * rotH * cameraOrientation)
+
+        if lockNorth {
+            enforceNorthUp()
+        }
     }
 
     /// Snaps `cameraOrientation` so that north is at the top of the screen,
